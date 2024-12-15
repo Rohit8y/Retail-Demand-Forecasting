@@ -53,7 +53,7 @@ def get_store_df(df):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("Config for baseline")
-    parser.add_argument('--data', default='../data', type=str,
+    parser.add_argument('--data', default='data', type=str,
                         help='Path to the data directory')
     parser.add_argument('--method', default='avg', type=str,
                         help='Main method to use: avg|random_forest')
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     # init method
     logger.info("initialising method...")
     if args.method == 'avg':
-        method = Average(df, store_sales, test_data)
+        method = Average(df, store_sales, test_data, args.output)
     else:
         logger.info(f"{args.method} not defined")
         raise Exception(f"{args.method} not defined")

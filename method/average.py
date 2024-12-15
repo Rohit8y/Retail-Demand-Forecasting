@@ -1,6 +1,6 @@
 import pandas as pd
 
-from skeleton import Process
+from method.skeleton import Process
 from tqdm import tqdm
 
 from util.preprocess import add_average_quantity
@@ -23,14 +23,13 @@ class Average(Process):
         generate_submission_weekday_smart(self.test_data, self.store_avg_dfs, self.output_file)
 
 
-def generate_submission_weekday_smart(test_df, store_avg_dfs, output_file='submission_avg.csv'):
+def generate_submission_weekday_smart(test_df, store_avg_dfs, output_file='submission_5.csv'):
     """
     Generate weekday-based sales predictions for submission.
 
     Args:
         test_df (pd.DataFrame): Test data with columns ['store_id', 'item_id', 'weekday', 'row_id'].
         store_avg_dfs (list): List of DataFrames containing average quantities by item and weekday for each store.
-        store_avg_base_dfs (list): List of DataFrames containing base averages for each store.
         output_file (str): File path to save the output CSV.
 
     Returns:

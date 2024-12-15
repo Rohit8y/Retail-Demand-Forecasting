@@ -28,10 +28,9 @@ def add_average_quantity(df, attribute=None):
         average_quantity = df.groupby('item_id', as_index=False)['quantity'].mean()
 
     # Merge the calculated average_quantity back to the original dataframe
-    df = df.merge(average_quantity, on=['item_id'] + ([attribute] if attribute else []), how='left',
-                  suffixes=('', '_average'))
+    average_quantity.rename(columns={'quantity': 'average_quantity'}, inplace=True)
 
-    return df
+    return average_quantity
 
 
 def add_features(df):

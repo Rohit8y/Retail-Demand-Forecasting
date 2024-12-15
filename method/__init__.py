@@ -1,1 +1,1 @@
-from average import Average
+from .average import Average
