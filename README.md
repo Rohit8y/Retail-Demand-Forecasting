@@ -13,7 +13,6 @@ This project provides a flexible sales forecasting solution for retail businesse
   
 - **Logging and Monitoring**
   - Detailed logging for tracking script execution
-  - Easy-to-read log messages with timestamps
 
 ## Prerequisites
 
