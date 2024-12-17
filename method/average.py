@@ -7,13 +7,14 @@ from util.preprocess import add_average_quantity
 
 
 class Average(Process):
-    def __init__(self, all_data, store_data, test_data, output_file):
-        super().__init__(all_data, store_data, test_data, output_file)
+    def __init__(self, all_data, test_data, output_file):
+        super().__init__(all_data, test_data, output_file)
         self.store_avg_dfs = None
 
     def run(self):
         self.store_avg_dfs = []
-
+        self.store_data = {f"store_{store_id}_sales": self.all_data[self.all_data['store_id'] == store_id] for store_id in self.all_data['store_id'].unique()}
+        
         for store_name, store_df in self.store_data.items():
             # Apply the add_average_quantity function to the store DataFrame
             processed_df = add_average_quantity(store_df, attribute='weekday')  # Example attribute
