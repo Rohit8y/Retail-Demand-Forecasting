@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 
 
 def get_all_sales_data(data_dir):
@@ -26,6 +27,12 @@ def add_date_time_features(df):
     df["day_of_week"] = df["date"].dt.dayofweek
     df['year'] = df["date"].dt.year
     df['day_of_month'] = df["date"].dt.day
+    df['day_of_year'] = df['date'].dt.dayofyear
+    df['week_of_year'] = df['date'].dt.isocalendar().week
+    df['quarter'] = df['date'].dt.quarter
+    df['month'] = df['date'].dt.month
+    df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int)
+    df['is_end_of_month'] = (df['date'] == df['date'] + pd.offsets.MonthEnd(0)).astype(int)
     return df
 
 

@@ -93,13 +93,13 @@ class BaselineRandomForest(Process):
             self.combined_sales, self.test_processed, features, target
         )
         rf_model = RandomForestRegressor(
-            n_estimators=2,
+            n_estimators=55,
             max_depth=None,
             min_samples_split=2,
             min_samples_leaf=1,
             random_state=42,
             verbose=2,
-            n_jobs=5,
+            n_jobs=-1,
         )
 
         rf_model.fit(X_train, y_train)

@@ -3,7 +3,6 @@ import logging
 
 from method import Average
 from method import BaselineRandomForest
-from method import BaselineCatBoost
 from util.preprocess import get_all_sales_data, add_features, get_test_data
 
 # Configure logging
@@ -76,8 +75,6 @@ if __name__ == '__main__':
         method = Average(df, test_data, args.output)
     elif args.method == 'rf_base':
         method = BaselineRandomForest(df, test_data, args.output)
-    elif args.method == 'cb_base':
-        method = BaselineCatBoost(df, test_data, args.output)
     else:
         logger.info(f"{args.method} not defined")
         raise Exception(f"{args.method} not defined")
