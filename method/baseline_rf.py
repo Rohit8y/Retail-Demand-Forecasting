@@ -6,7 +6,6 @@ from sklearn.metrics import root_mean_squared_error
 import numpy as np
 
 
-
 class BaselineRandomForest(Process):
     def __init__(self, all_data, test_data, output_file):
         super().__init__(all_data, test_data, output_file)
@@ -25,6 +24,10 @@ class BaselineRandomForest(Process):
         test_processed = self.test.drop(index=missing_indices)
         test_processed = test_processed.reset_index(drop=True)
         return test_processed,missing_indices,valid_indices
+    
+    def one_hot_encode(self, df, column):
+        encoded_df = pd.get_dummies(df, columns=[column], prefix=[column])
+        return encoded_df   
 
     def partition_data(self, df, test_df, features, target):
         train_data = df[df["date"] < "2024-06-01"]
@@ -38,7 +41,16 @@ class BaselineRandomForest(Process):
 
         return X_train, X_valid, X_test, y_train, y_valid
 
-    def encode(self, train_series, target, test_series, n_splits=5, random_state=42):
+    def hashing_encode(self,series, n_buckets=50021):
+        return series.apply(lambda x: hash(x) % n_buckets)
+    
+    def frequency_encode(self,train_series, test_series):
+        freq_map = train_series.value_counts().to_dict()
+        train_encoded = train_series.map(freq_map).fillna(0)
+        test_encoded = test_series.map(freq_map).fillna(0)
+        return train_encoded, test_encoded
+
+    def target_encode(self, train_series, target, test_series, n_splits=5, random_state=42):
         """
         Perform target encoding on a categorical feature.
 
@@ -71,11 +83,17 @@ class BaselineRandomForest(Process):
 
     def run(self):
         self.test_processed,self.missing,self.valid = self.process_test_data()
-        self.combined_sales["item_id_enc"], self.test_processed["item_id_enc"] = self.encode(
-            self.combined_sales["item_id"],
-            self.combined_sales["quantity"],
-            self.test_processed["item_id"],
-        )
+        # self.combined_sales["item_id_enc"], self.test_processed["item_id_enc"] = self.target_encode(
+        #     self.combined_sales["item_id"],
+        #     self.combined_sales["quantity"],
+        #     self.test_processed["item_id"],
+        # )
+        # self.combined_sales["item_id_enc"] = self.hashing_encode(self.combined_sales["item_id"])
+        # self.test_processed["item_id_enc"] = self.hashing_encode(self.test_processed["item_id"])
+
+        self.combined_sales["item_id_enc"], self.test_processed["item_id_enc"] = self.frequency_encode(self.combined_sales["item_id"],self.test_processed["item_id"])
+        self.combined_sales = self.one_hot_encode(self.combined_sales, "store_id")
+        self.test_processed = self.one_hot_encode(self.test_processed, "store_id")
         exclude_cols = [
             "date",
             "item_id",
@@ -89,11 +107,13 @@ class BaselineRandomForest(Process):
         ]
         target = "quantity"
         print("Selected Features:", features)
+
+
         X_train, X_valid, X_test, y_train, y_valid = self.partition_data(
             self.combined_sales, self.test_processed, features, target
         )
         rf_model = RandomForestRegressor(
-            n_estimators=55,
+            n_estimators=30,
             max_depth=None,
             min_samples_split=2,
             min_samples_leaf=1,

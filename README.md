@@ -74,6 +74,14 @@ retail-forecasting/
 └── submissions/         # Output forecasts
 ```
 
+
+# Kaggle Submission History
+
+| Date       |Submission Description                  | Score      |  User     |
+|------------|----------------------------------------|------------|-----------|
+| 2024-12-19 |Feature engineering and tuning          | 0.13567    |           | 
+| 2024-12-20 | Ensemble with XGBoost and LightGBM     | 0.14567    |           |
+
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
