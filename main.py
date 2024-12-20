@@ -2,7 +2,7 @@ import argparse
 import logging
 
 from method import Average
-from method import BaselineRandomForest
+from method import BaselineRandomForest,BaselineNeuralNet
 from util.preprocess import get_all_sales_data, add_features, get_test_data
 
 # Configure logging
@@ -19,7 +19,7 @@ def prepare_data(data_path, apply_filters=True):
     logger.info("Raw data loaded successfully.")
 
     # Add features to the raw data
-    all_data = add_features(raw_data)
+    all_data = add_features("data",raw_data)
     logger.info("Features added successfully.")
 
     # Apply filters
@@ -35,7 +35,7 @@ def prepare_data(data_path, apply_filters=True):
 def prepare_test_data(data_dir):
     test = get_test_data(data_dir)
     logger.info("Test data loaded successfully.")
-    test_data = add_features(test)
+    test_data = add_features("data",test)
     logger.info("Features added to test data")
 
     return test_data
@@ -75,6 +75,8 @@ if __name__ == '__main__':
         method = Average(df, test_data, args.output)
     elif args.method == 'rf_base':
         method = BaselineRandomForest(df, test_data, args.output)
+    elif args.method == 'nn':
+        method = BaselineNeuralNet(df, test_data, args.output)
     else:
         logger.info(f"{args.method} not defined")
         raise Exception(f"{args.method} not defined")

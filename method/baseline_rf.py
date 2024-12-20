@@ -3,8 +3,9 @@ from method.skeleton import Process
 from sklearn.model_selection import KFold
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import root_mean_squared_error
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
 import numpy as np
-
 
 class BaselineRandomForest(Process):
     def __init__(self, all_data, test_data, output_file):
@@ -25,6 +26,24 @@ class BaselineRandomForest(Process):
         test_processed = test_processed.reset_index(drop=True)
         return test_processed,missing_indices,valid_indices
     
+    def scale(self,X_train,X_valid,X_test):
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_valid_scaled = scaler.transform(X_valid)
+        X_test_scaled = scaler.transform(X_test)
+        return X_train_scaled,X_valid_scaled,X_test_scaled
+    
+    def label_encode(self, train_df, test_df):
+        for col in ['dept_name', 'class_name', 'subclass_name', 'item_type']:
+            label_encoder = LabelEncoder() 
+            train_df[col] = label_encoder.fit_transform(train_df[col])
+            test_labels = test_df[col].values 
+            valid_mask = np.isin(test_labels, label_encoder.classes_) 
+            encoded_labels = np.full_like(test_labels, fill_value=-1, dtype=np.int32) 
+            encoded_labels[valid_mask] = label_encoder.transform(test_labels[valid_mask])  
+            test_df[col] = encoded_labels
+        return train_df, test_df
+
     def one_hot_encode(self, df, column):
         encoded_df = pd.get_dummies(df, columns=[column], prefix=[column])
         return encoded_df   
@@ -32,7 +51,6 @@ class BaselineRandomForest(Process):
     def partition_data(self, df, test_df, features, target):
         train_data = df[df["date"] < "2024-06-01"]
         valid_data = df[df["date"] >= "2024-06-01"]
-
         X_train = train_data[features]
         y_train = train_data[target]
         X_valid = valid_data[features]
@@ -51,20 +69,6 @@ class BaselineRandomForest(Process):
         return train_encoded, test_encoded
 
     def target_encode(self, train_series, target, test_series, n_splits=5, random_state=42):
-        """
-        Perform target encoding on a categorical feature.
-
-        Parameters:
-        - train_series: pd.Series, categorical feature from training data
-        - target: pd.Series, target variable from training data
-        - test_series: pd.Series, categorical feature from test data
-        - n_splits: int, number of K-Fold splits
-        - random_state: int, random seed
-
-        Returns:
-        - encoded_train: pd.Series, target-encoded training feature
-        - encoded_test: pd.Series, target-encoded test feature
-        """
         kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
         encoded_train = pd.Series(np.nan, index=train_series.index)
 
@@ -83,20 +87,17 @@ class BaselineRandomForest(Process):
 
     def run(self):
         self.test_processed,self.missing,self.valid = self.process_test_data()
-        # self.combined_sales["item_id_enc"], self.test_processed["item_id_enc"] = self.target_encode(
-        #     self.combined_sales["item_id"],
-        #     self.combined_sales["quantity"],
-        #     self.test_processed["item_id"],
-        # )
-        # self.combined_sales["item_id_enc"] = self.hashing_encode(self.combined_sales["item_id"])
-        # self.test_processed["item_id_enc"] = self.hashing_encode(self.test_processed["item_id"])
+        for col in ['dept_name', 'class_name', 'subclass_name', 'item_type', 'item_id']:
+            self.combined_sales[col], self.test_processed[col] = self.target_encode(
+                self.combined_sales[col],
+                self.combined_sales["quantity"],
+                self.test_processed[col],
+            )
 
-        self.combined_sales["item_id_enc"], self.test_processed["item_id_enc"] = self.frequency_encode(self.combined_sales["item_id"],self.test_processed["item_id"])
         self.combined_sales = self.one_hot_encode(self.combined_sales, "store_id")
-        self.test_processed = self.one_hot_encode(self.test_processed, "store_id")
+        self.test_processed= self.one_hot_encode(self.test_processed, "store_id")
         exclude_cols = [
             "date",
-            "item_id",
             "sum_total",
             "source",
             "quantity",
@@ -108,10 +109,12 @@ class BaselineRandomForest(Process):
         target = "quantity"
         print("Selected Features:", features)
 
-
-        X_train, X_valid, X_test, y_train, y_valid = self.partition_data(
+        X_train, X_valid, X_test, y_train, y_valid = self.partition_data(        #change this line when using test_processed
             self.combined_sales, self.test_processed, features, target
         )
+
+        X_train,X_valid,X_test = self.scale(X_train, X_valid, X_test)
+
         rf_model = RandomForestRegressor(
             n_estimators=30,
             max_depth=None,
@@ -129,7 +132,7 @@ class BaselineRandomForest(Process):
 
         self.predictions = rf_model.predict(X_test)
 
-    def generate_submission(self):
+    def generate_submission_item_id(self):
 
         all_indices = np.arange(self.test.shape[0])
         pred_map = dict(zip(self.valid, self.predictions))
@@ -139,10 +142,21 @@ class BaselineRandomForest(Process):
             if i in pred_map:
                 final_quantities.append(pred_map[i])
             else:
-                final_quantities.append(0)
+                final_quantities.append(3)
 
         submission_df = pd.DataFrame(
             {"row_id": all_indices, "quantity": final_quantities}
         )
 
         submission_df.to_csv('submission.csv', index=False)
+
+    def generate_submission(self):
+        self.generate_submission_item_id()
+        # all_indices = np.arange(self.test.shape[0])
+        # submission_df = pd.DataFrame(
+        #     {"row_id": all_indices, "quantity": self.predictions}
+        # )
+        # submission_df.to_csv('submission.csv', index=False)
+
+
+
