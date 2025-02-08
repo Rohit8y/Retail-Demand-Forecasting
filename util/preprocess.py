@@ -29,19 +29,34 @@ def get_test_data(data_dir):
     return test
 
 
-def add_discount_features(sales_df, discount_df):
+def add_discount_features(sales_df, discount_df, is_test=False):
+    # Ensure date columns are in datetime format
+    discount_df['date'] = pd.to_datetime(discount_df['date'])
+    sales_df['date'] = pd.to_datetime(sales_df['date'])
+
     # Add a discount column to the discount DataFrame
     discount_df['discount'] = discount_df['sale_price_time_promo'] < discount_df['sale_price_before_promo']
 
-    # Merge the two DataFrames
-    merged_df = sales_df.merge(
-        discount_df[['date', 'item_id', 'store_id', 'discount']],
-        on=['date', 'item_id', 'store_id'],
-        how='left'
-    )
+    if is_test:
+        # For test set, extract 2023 discount info and aggregate by item_id and store_id
+        discount_2023_df = discount_df[discount_df['date'].dt.year == 2023]
 
-    # Fill missing values with False (assumes no discount if not found)
+        # Keep unique discount status per item-store combination
+        discount_summary = discount_2023_df.groupby(['item_id', 'store_id'])['discount'].max().reset_index()
+
+        # Merge sales_df with aggregated discount data
+        merged_df = sales_df.merge(discount_summary, on=['item_id', 'store_id'], how='left')
+    else:
+        # Merge directly for the train set
+        merged_df = sales_df.merge(
+            discount_df[['date', 'item_id', 'store_id', 'discount']],
+            on=['date', 'item_id', 'store_id'],
+            how='left'
+        )
+
+    # Fill missing discount values with False (assumes no discount if not found)
     merged_df['discount'] = merged_df['discount'].fillna(False)
+
     return merged_df
 
 
