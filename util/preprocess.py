@@ -16,11 +16,33 @@ def get_all_sales_data(data_dir):
     return combined_sales
 
 
+def get_discount_history(data_dir):
+    discount_history_data = pd.read_csv(os.path.join(data_dir, "discounts_history.csv"), delimiter=",")
+    discount_history_data["date"] = pd.to_datetime(discount_history_data["date"])
+    return discount_history_data
+
+
 def get_test_data(data_dir):
     test = pd.read_csv(os.path.join(data_dir, "test.csv"), delimiter=";")
     test["date"] = pd.to_datetime(test["date"], format="%d.%m.%Y")
     test = test.drop(columns=["row_id"])
     return test
+
+
+def add_discount_features(sales_df, discount_df):
+    # Add a discount column to the discount DataFrame
+    discount_df['discount'] = discount_df['sale_price_time_promo'] < discount_df['sale_price_before_promo']
+
+    # Merge the two DataFrames
+    merged_df = sales_df.merge(
+        discount_df[['date', 'item_id', 'store_id', 'discount']],
+        on=['date', 'item_id', 'store_id'],
+        how='left'
+    )
+
+    # Fill missing values with False (assumes no discount if not found)
+    merged_df['discount'] = merged_df['discount'].fillna(False)
+    return merged_df
 
 
 def add_date_time_features(df):
@@ -37,7 +59,7 @@ def add_date_time_features(df):
 
 
 def add_class_subclass_features(data_dir, df):
-    catalog = pd.read_csv(os.path.join(data_dir, "catalog.csv"), delimiter=",")
+    catalog = pd.read_csv(os.path.join(data_dir, "translated_catalog.csv"), delimiter=",")
     catalog = catalog.drop(
         columns=["weight_volume", "weight_netto", "fatness", "Unnamed: 0"]
     )
