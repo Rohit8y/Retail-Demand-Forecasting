@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project provides a flexible sales forecasting solution for retail businesses, offering multiple methods for predicting sales across different stores and items. The primary goal is to help retailers optimize inventory management and sales strategies through data-driven insights.
+This project provides a flexible sales forecasting solution for retail businesses, offering multiple methods for predicting sales across different stores and items. The primary goal is to help retailers optimize inventory management and sales strategies through data-driven insights. Training dataset and final results were uploaded to the [Kaggle Challenge](https://www.kaggle.com/competitions/ml-zoomcamp-2024-competition)
 
 ## Features
 
